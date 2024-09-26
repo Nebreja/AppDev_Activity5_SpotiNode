@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundWave</title>
+    <link rel="stylesheet" href="/styles.css"> <!-- Reference to the external CSS -->
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <div class="logo">SpotiNode</div>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/upload">Upload</a> <!-- Link to the upload page -->
+        </nav>
+    </header>
+
+    <!-- Currently Playing Section -->
+    <section class="currently-playing">
+        <div class="song-info">
+            <% if (currentSong) { %>
+                <span id="current-song-name" class="song-name"><%= currentSong.song_name %></span>
+                <span id="current-song-artist" class="song-artist">by <%= currentSong.artist %></span>
+                <div class="audio-container">
+                    <audio id="current-audio" controls>
+                        <source src="/music/<%= currentSong.file_path %>" type="audio/mpeg">
+                    </audio>
+                </div>
+            <% } else { %>
+                <span id="current-song-name" class="song-name">No song is currently playing</span>
+                <span id="current-song-artist" class="song-artist"></span>
+            <% } %>
+        </div>
+        <!-- Next and Shuffle buttons -->
+        <div class="controls">
+            <button id="next-btn">Next</button>
+            <button id="shuffle-btn">Shuffle</button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main>
+        <section class="song-list">
+            <h2>All Songs</h2>
+
+            <!-- Songs Table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Song</th>
+                        <th>Artist</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="song-list-body">
+                    <% songs.forEach(function(song, index) { %>
+                        <tr class="song-item">
+                            <td class="song-name"><%= song.song_name %></td>
+                            <td class="song-artist"><%= song.artist %></td>
+                            <td>
+                                <div class="button-container">
+                                    <button class="play-btn"
+                                        data-file-path="/music/<%= song.file_path %>"
+                                        data-song-name="<%= song.song_name %>"
+                                        data-artist-name="<%= song.artist %>"
+                                        data-index="<%= index %>"> <!-- Adding index data attribute -->
+                                        Play
+                                    </button>
+                                    <form action="/favorites" method="POST" class="fav-form">
+                                        <input type="hidden" name="songId" value="<%= song.id %>">
+                                        <button type="submit" class="fav-btn">Add to Favorites</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 SoundWave</p>
+    </footer>
+
+    <!-- JavaScript to Handle Audio Playback -->
+    <script>
+        const currentAudio = document.getElementById('current-audio');
+        const currentSongName = document.getElementById('current-song-name');
+        const currentSongArtist = document.getElementById('current-song-artist');
+        const nextButton = document.getElementById('next-btn');
+        const shuffleButton = document.getElementById('shuffle-btn');
+        const songs = Array.from(document.querySelectorAll('.play-btn'));
+        let currentIndex = 0; // Track current song index
+
+        // Function to play a new song and update currently playing info
+        function playNewSong(filePath, songName, artistName, index) {
+            if (currentAudio) {
+                currentAudio.pause(); // Stop the currently playing audio
+                currentAudio.src = filePath; // Set new audio source
+                currentAudio.load(); // Load the new audio source
+                currentAudio.play(); // Play the new audio
+
+                // Update the currently playing song info
+                currentSongName.textContent = songName;
+                currentSongArtist.textContent = "by " + artistName;
+                currentIndex = index; // Update the current index
+            }
+        }
+
+        // Adding event listeners to all play buttons
+        songs.forEach(button => {
+            button.addEventListener('click', function(event) {
+                const filePath = this.getAttribute('data-file-path');
+                const songName = this.getAttribute('data-song-name');
+                const artistName = this.getAttribute('data-artist-name');
+                const index = parseInt(this.getAttribute('data-index')); // Get the song index
+                playNewSong(filePath, songName, artistName, index); // Play new song and update info
+            });
+        });
+
+        // Function to play the next song
+        nextButton.addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % songs.length; // Move to the next song (loop back to first)
+            const nextSong = songs[currentIndex];
+            const filePath = nextSong.getAttribute('data-file-path');
+            const songName = nextSong.getAttribute('data-song-name');
+            const artistName = nextSong.getAttribute('data-artist-name');
+            playNewSong(filePath, songName, artistName, currentIndex); // Play the next song
+        });
+
+        // Function to play a random song (shuffle)
+        shuffleButton.addEventListener('click', function() {
+            const randomIndex = Math.floor(Math.random() * songs.length); // Get a random index
+            const randomSong = songs[randomIndex];
+            const filePath = randomSong.getAttribute('data-file-path');
+            const songName = randomSong.getAttribute('data-song-name');
+            const artistName = randomSong.getAttribute('data-artist-name');
+            playNewSong(filePath, songName, artistName, randomIndex); // Play the random song
+        });
+    </script>
+</body>
+</html>
